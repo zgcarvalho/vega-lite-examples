@@ -52,7 +52,9 @@ Vl.new(width: 300, heigh: 250)
 |> Vl.encode(:y, aggregate: :count, title: "Number of Cars")
 ```
 
-## Aggregate bar chart
+## Section
+
+## Aggregate Bar Chart
 
 A bar chart showing the US population distribution of age groups in 2000.
 
@@ -68,23 +70,97 @@ Vl.new(
 |> Vl.encode(:x, field: "people", aggregate: :sum, title: "population")
 ```
 
+## Aggregate Bar Chart (Sorted)
+
+A bar chart that sorts the y-values by the x-values.
+
+```elixir
+Vl.new(
+  height: [step: 17],
+  description: "A bar chart that sorts the y-values by the x-values."
+)
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/population.json")
+|> Vl.transform(filter: "datum.year == 2000")
+|> Vl.mark(:bar)
+|> Vl.encode(:y, field: "age", type: :ordinal, sort: "-x")
+|> Vl.encode(:x, field: "people", aggregate: :sum, title: "population")
+```
+
+## Grouped Bar Chart
+
+Read [here](https://vega.github.io/editor/#/examples/vega-lite/size.html#offset-step) for more details about how to set step size for grouped bar.
+
+```elixir
+data = [
+  %{"category" => "A", "group" => "x", "value" => 0.1},
+  %{"category" => "A", "group" => "y", "value" => 0.6},
+  %{"category" => "A", "group" => "z", "value" => 0.9},
+  %{"category" => "B", "group" => "x", "value" => 0.7},
+  %{"category" => "B", "group" => "y", "value" => 0.2},
+  %{"category" => "B", "group" => "z", "value" => 1.1},
+  %{"category" => "C", "group" => "x", "value" => 0.6},
+  %{"category" => "C", "group" => "y", "value" => 0.1},
+  %{"category" => "C", "group" => "z", "value" => 0.2}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.mark(:bar)
+|> Vl.encode(:x, field: "category")
+|> Vl.encode(:y, field: "value", type: :quantitative)
+|> Vl.encode(:x_offset, field: "group")
+|> Vl.encode(:color, field: "group")
+```
+
+## Grouped Bar Chart (Multiple Measure with Repeat)
+
+Read [here](https://vega.github.io/editor/#/examples/vega-lite/size.html#offset-step) for more details about how to set step size for grouped bar.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
+|> Vl.repeat(
+  layer: ["Worldwide Gross", "US Gross"],
+  Vl.new()
+  |> Vl.mark(:bar)
+  |> Vl.encode(:x, field: "Major Genre", type: :nominal)
+  |> Vl.encode_repeat(:y, field: [repeat: :layer], aggregate: :sum, type: :quantitative, title: "Total Gross")
+  |> Vl.encode_repeat(:color, datum: [repeat: :layer])
+  |> Vl.encode_repeat(:x_offset, datum: [repeat: :layer])
+)
+|> Vl.to_spec()
+
+```
+
 ## Section
 
 ```elixir
 Vl.from_json("""
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "description": "A bar chart showing the US population distribution of age groups in 2000.",
-  "height": {"step": 17},
-  "data": { "url": "https://vega.github.io/vega-lite/examples/data/population.json"},
-  "transform": [{"filter": "datum.year == 2000"}],
-  "mark": "bar",
-  "encoding": {
-    "y": {"field": "age"},
-    "x": {
-      "aggregate": "sum", "field": "people",
-      "title": "population"
+  "data": {
+    "url": "https://vega.github.io/vega-lite/examples/data/movies.json"
+  },
+  "repeat": {"layer": ["Worldwide Gross", "US Gross"]},
+  "spec": {
+    "mark": "bar",
+    "encoding": {
+      "x": {
+        "field": "Major Genre",
+        "type": "nominal"
+      },
+      "y": {
+        "aggregate": "sum",
+        "field": {"repeat": "layer"},
+        "type": "quantitative",
+        "title": "Total Gross"
+      },
+      "color": {"datum": {"repeat": "layer"}, "title": "Gross"},
+      "xOffset": {"datum": {"repeat": "layer"}}
     }
+  },
+  "config": {
+    "mark": {"invalid": null}
   }
 }
 """)
