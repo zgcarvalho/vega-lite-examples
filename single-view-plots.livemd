@@ -1,0 +1,91 @@
+# Single-view plots
+
+```elixir
+Mix.install([
+  {:vega_lite, "~> 0.1.5"},
+  {:kino_vega_lite, "~> 0.1.1"},
+  :jason
+])
+```
+
+## Section
+
+```elixir
+alias VegaLite, as: Vl
+```
+
+## Simple bar chart
+
+A bar chart encodes quantitative values as the extent of rectangular bars.
+
+```elixir
+data = [
+  %{"a" => "A", "b" => 28},
+  %{"a" => "B", "b" => 55},
+  %{"a" => "C", "b" => 43},
+  %{"a" => "D", "b" => 91},
+  %{"a" => "E", "b" => 81},
+  %{"a" => "F", "b" => 53},
+  %{"a" => "G", "b" => 19},
+  %{"a" => "H", "b" => 87},
+  %{"a" => "I", "b" => 52}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.mark(:bar)
+|> Vl.encode(:x, field: :a, type: :nominal, axis: [label_angle: 40])
+|> Vl.encode(:y, field: :b, type: :quantitative)
+```
+
+## Responsive Bar Chart
+
+The bar gets automatically resized based on container size. To see how the bar gets automatically resized try this in the editor.
+
+**I could´t use "width": "container".** Is this possible in livebook?
+
+```elixir
+Vl.new(width: 300, heigh: 250)
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
+|> Vl.mark(:bar)
+|> Vl.encode(:x, field: "Origin")
+|> Vl.encode(:y, aggregate: :count, title: "Number of Cars")
+```
+
+## Aggregate bar chart
+
+A bar chart showing the US population distribution of age groups in 2000.
+
+```elixir
+Vl.new(
+  height: [step: 17],
+  description: "A bar chart showing the US population distribution of age groups in 2000."
+)
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/population.json")
+|> Vl.transform(filter: "datum.year == 2000")
+|> Vl.mark(:bar)
+|> Vl.encode(:y, field: "age")
+|> Vl.encode(:x, field: "people", aggregate: :sum, title: "population")
+```
+
+## Section
+
+```elixir
+Vl.from_json("""
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "A bar chart showing the US population distribution of age groups in 2000.",
+  "height": {"step": 17},
+  "data": { "url": "https://vega.github.io/vega-lite/examples/data/population.json"},
+  "transform": [{"filter": "datum.year == 2000"}],
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "age"},
+    "x": {
+      "aggregate": "sum", "field": "people",
+      "title": "population"
+    }
+  }
+}
+""")
+```
