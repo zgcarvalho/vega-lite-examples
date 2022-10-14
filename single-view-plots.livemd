@@ -6,11 +6,7 @@ Mix.install([
   {:kino_vega_lite, "~> 0.1.1"},
   :jason
 ])
-```
 
-## Section
-
-```elixir
 alias VegaLite, as: Vl
 ```
 
@@ -120,16 +116,111 @@ Read [here](https://vega.github.io/editor/#/examples/vega-lite/size.html#offset-
 Vl.new()
 |> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
 |> Vl.repeat(
-  layer: ["Worldwide Gross", "US Gross"],
+  [layer: ["Worldwide Gross", "US Gross"]],
   Vl.new()
   |> Vl.mark(:bar)
   |> Vl.encode(:x, field: "Major Genre", type: :nominal)
-  |> Vl.encode_repeat(:y, field: [repeat: :layer], aggregate: :sum, type: :quantitative, title: "Total Gross")
-  |> Vl.encode_repeat(:color, datum: [repeat: :layer])
-  |> Vl.encode_repeat(:x_offset, datum: [repeat: :layer])
+  |> Vl.encode_repeat(:y, :layer, aggregate: :sum, type: :quantitative, title: "Total Gross")
+  |> Vl.encode(:color, datum: [repeat: :layer], type: :nominal, title: "Gross")
+  |> Vl.encode(:x_offset, datum: [repeat: :layer])
 )
-|> Vl.to_spec()
 
+# |> Vl.config(mark: [invalid: :null])
+# |> Vl.to_spec()
+```
+
+## Stacked Bar Chart
+
+
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/seattle-weather.csv")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "date", type: :ordinal, time_unit: :month, title: "Month of the year")
+|> Vl.encode(:y, aggregate: :count, type: :quantitative)
+|> Vl.encode_field(:color, "weather",
+  type: :nominal,
+  scale: [
+    domain: ["sun", "fog", "drizzle", "rain", "snow"],
+    range: ["#e7ba52", "#c7c7c7", "#aec7e8", "#1f77b4", "#9467bd"]
+  ]
+)
+```
+
+## Stacked Bar Chart with Rounded Corners
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/seattle-weather.csv")
+|> Vl.mark(:bar, corner_radius_top_left: 10, corner_radius_top_right: 10)
+|> Vl.encode_field(:x, "date", type: :ordinal, time_unit: :month, title: "Month of the year")
+|> Vl.encode(:y, aggregate: :count, type: :quantitative)
+|> Vl.encode_field(:color, "weather")
+```
+
+## Horizontal Stacked Bar Chart
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/barley.json")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:y, "variety")
+|> Vl.encode_field(:x, "yield", aggregate: :sum)
+|> Vl.encode_field(:color, "site")
+```
+
+## Normalized (Percentage) Stacked Bar Chart
+
+```elixir
+Vl.new(width: [step: 13])
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/population.json")
+|> Vl.transform(filter: "datum.year == 2000")
+|> Vl.transform(calculate: "datum.sex == 2 ? 'Female' : 'Male'", as: "gender")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "age")
+|> Vl.encode_field(:y, "people", aggregate: :sum, stack: :normalize)
+|> Vl.encode_field(:color, "gender", scale: [range: ["#675193", "#ca8861"]])
+```
+
+## Normalized (Percentage) Stacked Bar Chart With Labels
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/population.json")
+|> Vl.transform(filter: "datum.year == 2000")
+|> Vl.transform(calculate: "datum.sex == 2 ? 'Female' : 'Male'", as: "gender")
+|> Vl.encode_field(:y, "age")
+|> Vl.layers([
+  Vl.new()
+  |> Vl.mark(:bar)
+  |> Vl.encode_field(:x, "people", aggregate: :sum, stack: :normalize, title: "population")
+  |> Vl.encode_field(:color, "gender", scale: [range: ["#675193", "#ca8861"]]),
+  Vl.new()
+  |> Vl.mark(:text, opacity: 0.9, color: :white)
+  |> Vl.encode_field(:x, "people", aggregate: :sum, stack: :normalize, band_position: 0.5)
+  |> Vl.encode_field(:text, "people", aggregate: :sum, title: "population")
+  |> Vl.encode_field(:detail, "gender")
+])
+```
+
+## Gantt Chart (Ranged Bar Marks)
+
+A simple bar chart with ranged data (aka Gantt Chart).
+
+```elixir
+data = [
+  %{"task" => "A", "start" => 1, "end" => 3},
+  %{"task" => "B", "start" => 3, "end" => 8},
+  %{"task" => "C", "start" => 8, "end" => 10}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.mark(:bar)
+|> Vl.encode_field(:y, "task", type: :ordinal)
+|> Vl.encode_field(:x, "start", type: :quantitative)
+|> Vl.encode_field(:x2, "end")
 ```
 
 ## Section
@@ -138,29 +229,19 @@ Vl.new()
 Vl.from_json("""
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "A simple bar chart with ranged data (aka Gantt Chart).",
   "data": {
-    "url": "https://vega.github.io/vega-lite/examples/data/movies.json"
+    "values": [
+      {"task": "A", "start": 1, "end": 3},
+      {"task": "B", "start": 3, "end": 8},
+      {"task": "C", "start": 8, "end": 10}
+    ]
   },
-  "repeat": {"layer": ["Worldwide Gross", "US Gross"]},
-  "spec": {
-    "mark": "bar",
-    "encoding": {
-      "x": {
-        "field": "Major Genre",
-        "type": "nominal"
-      },
-      "y": {
-        "aggregate": "sum",
-        "field": {"repeat": "layer"},
-        "type": "quantitative",
-        "title": "Total Gross"
-      },
-      "color": {"datum": {"repeat": "layer"}, "title": "Gross"},
-      "xOffset": {"datum": {"repeat": "layer"}}
-    }
-  },
-  "config": {
-    "mark": {"invalid": null}
+  "mark": "bar",
+  "encoding": {
+    "y": {"field": "task", "type": "ordinal"},
+    "x": {"field": "start", "type": "quantitative"},
+    "x2": {"field": "end"}
   }
 }
 """)
