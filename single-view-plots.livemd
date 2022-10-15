@@ -1,4 +1,4 @@
-# Single-view plots
+# Bar Charts
 
 ```elixir
 Mix.install([
@@ -131,8 +131,6 @@ Vl.new()
 
 ## Stacked Bar Chart
 
-
-
 ```elixir
 Vl.new()
 |> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/seattle-weather.csv")
@@ -223,26 +221,296 @@ Vl.new()
 |> Vl.encode_field(:x2, "end")
 ```
 
+## A Bar Chart Encoding Color Names in the Data
+
+A bar chart that directly encodes color names in the data.
+
+```elixir
+data = [
+  %{"color" => "red", "b" => 28},
+  %{"color" => "green", "b" => 55},
+  %{"color" => "blue", "b" => 43}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "color", type: :nominal)
+|> Vl.encode_field(:y, "b", type: :quantitative)
+|> Vl.encode_field(:color, "color", type: :nominal, scale: false)
+```
+
+## Layered Bar Chart
+
+A bar chart showing the US population distribution of age groups and gender in 2000.
+
+```elixir
+Vl.new(width: [step: 17])
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/population.json")
+|> Vl.transform(filter: "datum.year == 2000")
+|> Vl.transform(calculate: "datum.sex == 2 ? 'Female' : 'Male'", as: "gender")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "age", type: :ordinal)
+|> Vl.encode_field(:y, "people", aggregate: "sum", title: "population", stack: false)
+|> Vl.encode_field(:color, "gender", scale: [range: ["#675193", "#ca8861"]])
+|> Vl.encode(:opacity, value: 0.6)
+```
+
+###
+
+## Diverging Stacked Bar Chart (Population Pyramid)
+
+A population pyramid for the US in 2000, created using stack. See https://vega.github.io/vega-lite/examples/concat_population_pyramid.html for a variant of this created using concat.
+
+```elixir
+Vl.new(width: 300, height: 200)
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/population.json")
+|> Vl.transform(filter: "datum.year == 2000")
+|> Vl.transform(calculate: "datum.sex == 2 ? 'Female' : 'Male'", as: "gender")
+|> Vl.transform(calculate: "datum.sex == 2 ? -datum.people : datum.people", as: "signed_people")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:y, "age", sort: :descending, axis: false)
+|> Vl.encode_field(:x, "signed_people", aggregate: :sum, axis: [format: :s])
+|> Vl.encode_field(
+  :color,
+  "gender",
+  scale: [range: ["#675193", "#ca8861"]],
+  legend: [orient: :top, title: false]
+)
+|> Vl.config(view: [stroke: false], axis: [grid: false])
+```
+
+## Diverging Stacked Bar Chart (with Neutral Parts)
+
+A diverging stacked bar chart for sentiments towards a set of eight questions, displayed as percentages with neutral responses straddling the 0% mark
+
+<!-- livebook:{"break_markdown":true} -->
+
+TODO set correct x
+
+```elixir
+data = [
+  %{
+    "question" => "Question 1",
+    "type" => "Strongly disagree",
+    "value" => 24,
+    "percentage" => 0.7
+  },
+  %{"question" => "Question 1", "type" => "Disagree", "value" => 294, "percentage" => 9.1},
+  %{
+    "question" => "Question 1",
+    "type" => "Neither agree nor disagree",
+    "value" => 594,
+    "percentage" => 18.5
+  },
+  %{"question" => "Question 1", "type" => "Agree", "value" => 1927, "percentage" => 59.9},
+  %{"question" => "Question 1", "type" => "Strongly agree", "value" => 376, "percentage" => 11.7},
+  %{
+    "question" => "Question 2",
+    "type" => "Strongly disagree",
+    "value" => 2,
+    "percentage" => 18.2
+  },
+  %{"question" => "Question 2", "type" => "Disagree", "value" => 2, "percentage" => 18.2},
+  %{
+    "question" => "Question 2",
+    "type" => "Neither agree nor disagree",
+    "value" => 0,
+    "percentage" => 0
+  },
+  %{"question" => "Question 2", "type" => "Agree", "value" => 7, "percentage" => 63.6},
+  %{"question" => "Question 2", "type" => "Strongly agree", "value" => 11, "percentage" => 0},
+  %{"question" => "Question 3", "type" => "Strongly disagree", "value" => 2, "percentage" => 20},
+  %{"question" => "Question 3", "type" => "Disagree", "value" => 0, "percentage" => 0},
+  %{
+    "question" => "Question 3",
+    "type" => "Neither agree nor disagree",
+    "value" => 2,
+    "percentage" => 20
+  },
+  %{"question" => "Question 3", "type" => "Agree", "value" => 4, "percentage" => 40},
+  %{"question" => "Question 3", "type" => "Strongly agree", "value" => 2, "percentage" => 20},
+  %{"question" => "Question 4", "type" => "Strongly disagree", "value" => 0, "percentage" => 0},
+  %{"question" => "Question 4", "type" => "Disagree", "value" => 2, "percentage" => 12.5},
+  %{
+    "question" => "Question 4",
+    "type" => "Neither agree nor disagree",
+    "value" => 1,
+    "percentage" => 6.3
+  },
+  %{"question" => "Question 4", "type" => "Agree", "value" => 7, "percentage" => 43.8},
+  %{"question" => "Question 4", "type" => "Strongly agree", "value" => 6, "percentage" => 37.5},
+  %{"question" => "Question 5", "type" => "Strongly disagree", "value" => 0, "percentage" => 0},
+  %{"question" => "Question 5", "type" => "Disagree", "value" => 1, "percentage" => 4.2},
+  %{
+    "question" => "Question 5",
+    "type" => "Neither agree nor disagree",
+    "value" => 3,
+    "percentage" => 12.5
+  },
+  %{"question" => "Question 5", "type" => "Agree", "value" => 16, "percentage" => 66.7},
+  %{"question" => "Question 5", "type" => "Strongly agree", "value" => 4, "percentage" => 16.7},
+  %{"question" => "Question 6", "type" => "Strongly disagree", "value" => 1, "percentage" => 6.3},
+  %{"question" => "Question 6", "type" => "Disagree", "value" => 1, "percentage" => 6.3},
+  %{
+    "question" => "Question 6",
+    "type" => "Neither agree nor disagree",
+    "value" => 2,
+    "percentage" => 12.5
+  },
+  %{"question" => "Question 6", "type" => "Agree", "value" => 9, "percentage" => 56.3},
+  %{"question" => "Question 6", "type" => "Strongly agree", "value" => 3, "percentage" => 18.8},
+  %{"question" => "Question 7", "type" => "Strongly disagree", "value" => 0, "percentage" => 0},
+  %{"question" => "Question 7", "type" => "Disagree", "value" => 0, "percentage" => 0},
+  %{
+    "question" => "Question 7",
+    "type" => "Neither agree nor disagree",
+    "value" => 1,
+    "percentage" => 20
+  },
+  %{"question" => "Question 7", "type" => "Agree", "value" => 4, "percentage" => 80},
+  %{"question" => "Question 7", "type" => "Strongly agree", "value" => 0, "percentage" => 0},
+  %{"question" => "Question 8", "type" => "Strongly disagree", "value" => 0, "percentage" => 0},
+  %{"question" => "Question 8", "type" => "Disagree", "value" => 0, "percentage" => 0},
+  %{
+    "question" => "Question 8",
+    "type" => "Neither agree nor disagree",
+    "value" => 0,
+    "percentage" => 0
+  },
+  %{"question" => "Question 8", "type" => "Agree", "value" => 0, "percentage" => 0},
+  %{"question" => "Question 8", "type" => "Strongly agree", "value" => 2, "percentage" => 100}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.transform(
+  calculate:
+    "if(datum.type === 'Strongly disagree',-2,0) + if(datum.type==='Disagree',-1,0) + if(datum.type =='Neither agree nor disagree',0,0) + if(datum.type ==='Agree',1,0) + if(datum.type ==='Strongly agree',2,0)",
+  as: "q_order"
+)
+|> Vl.transform(
+  calculate:
+    "if(datum.type === 'Disagree' || datum.type === 'Strongly disagree', datum.percentage,0) + if(datum.type === 'Neither agree nor disagree', datum.percentage / 2,0)",
+  as: "signed_percentage"
+)
+|> Vl.transform(stack: "percentage", as: ["v1", "v2"], groupby: ["question"])
+|> Vl.transform(joinaggregate: [[field: "signed_percentage", op: "sum", as: "offset"]])
+|> Vl.transform(groupby: ["question"])
+|> Vl.transform(calculate: "datum.v1 - datum.offset", as: "nx")
+|> Vl.transform(calculate: "datum.v2 - datum.offset", as: "nx2")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "nx", type: :quantitative, title: "percentage")
+|> Vl.encode_field(:x2, "nx2")
+|> Vl.encode_field(:y, "question",
+  type: :nominal,
+  title: "Question",
+  axis: [offset: 5, ticks: false, min_extent: 60, domain: false]
+)
+|> Vl.encode_field(:color, "type",
+  title: "Response",
+  scale: [
+    domain: [
+      "Strongly disagree",
+      "Disagree",
+      "Neither agree nor disagree",
+      "Agree",
+      "Strongly agree"
+    ],
+    range: ["#c30d24", "#f3a583", "#cccccc", "#94c6da", "#1770ab"],
+    type: :ordinal
+  ]
+)
+
+# |> Vl.to_spec()
+```
+
+## Simple Bar Chart with Labels
+
+Bar chart with text labels. Set domain to make the frame cover the labels.
+
+```elixir
+data = [
+  %{"a" => "A", "b" => 28},
+  %{"a" => "B", "b" => 55},
+  %{"a" => "C", "b" => 43}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.encode_field(:y, "a", type: :nominal)
+|> Vl.encode_field(:x, "b", type: :quantitative, scale: [domain: [0, 60]])
+|> Vl.layers([
+  Vl.new()
+  |> Vl.mark(:bar),
+  Vl.new()
+  |> Vl.mark(:text, align: :left, baseline: :middle, dx: 3)
+  |> Vl.encode_field(:text, "b", type: :quantitative)
+])
+```
+
+## Bar Chart with Label Overlays
+
+TODO font looks like superposed
+
+```elixir
+Vl.new(width: 300, height: [step: 20])
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
+|> Vl.encode_field(:y, "Major Genre", type: :nominal, axis: false)
+|> Vl.layers([
+  Vl.new()
+  |> Vl.mark(:bar, color: "#ddd")
+  |> Vl.encode_field(:x, "IMDB Rating",
+    aggregate: :mean,
+    scale: [domain: [0, 10]],
+    title: "Mean IMDB Ratings"
+  ),
+  Vl.new()
+  |> Vl.mark(:text, align: :left, x: 5)
+  |> Vl.encode_field(:text, "Major Genre", detail: [aggregate: :count])
+])
+```
+
+## Bar Chart showing Initials of Month Names
+
+Using labelExpr to show only initial letters of month names.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/seattle-weather.csv")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "date",
+  time_unit: "month",
+  axis: [
+    label_align: "left",
+    label_expr: "datum.label[0]"
+  ]
+)
+|> Vl.encode_field(:y, "precipitation", aggregate: :mean)
+```
+
 ## Section
 
 ```elixir
 Vl.from_json("""
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "description": "A simple bar chart with ranged data (aka Gantt Chart).",
-  "data": {
-    "values": [
-      {"task": "A", "start": 1, "end": 3},
-      {"task": "B", "start": 3, "end": 8},
-      {"task": "C", "start": 8, "end": 10}
-    ]
-  },
+  "description": "Using `labelExpr` to show only initial letters of month names.",
+  "data": {"url": "data/seattle-weather.csv"},
   "mark": "bar",
   "encoding": {
-    "y": {"field": "task", "type": "ordinal"},
-    "x": {"field": "start", "type": "quantitative"},
-    "x2": {"field": "end"}
+    "x": {
+      "timeUnit": "month",
+      "field": "date",
+      "axis": {
+        "labelAlign": "left",
+        "labelExpr": "datum.label[0]"
+      }
+    },
+    "y": {"aggregate": "mean", "field": "precipitation"}
   }
 }
 """)
 ```
+
+
