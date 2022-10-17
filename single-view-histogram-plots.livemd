@@ -1,0 +1,198 @@
+# Histograms, Density Plots and Dot Plots
+
+```elixir
+Mix.install([
+  {:vega_lite, "~> 0.1.5"},
+  {:kino_vega_lite, "~> 0.1.1"},
+  :jason
+])
+
+alias VegaLite, as: Vl
+```
+
+## Histogram
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "IMDB Rating", bin: true)
+|> Vl.encode(:y, aggregate: :count)
+```
+
+## Histogram (from Binned Data)
+
+```elixir
+data = [
+  %{"bin_start" => 8, "bin_end" => 10, "count" => 7},
+  %{"bin_start" => 10, "bin_end" => 12, "count" => 29},
+  %{"bin_start" => 12, "bin_end" => 14, "count" => 71},
+  %{"bin_start" => 14, "bin_end" => 16, "count" => 127},
+  %{"bin_start" => 16, "bin_end" => 18, "count" => 94},
+  %{"bin_start" => 18, "bin_end" => 20, "count" => 54},
+  %{"bin_start" => 20, "bin_end" => 22, "count" => 17},
+  %{"bin_start" => 22, "bin_end" => 24, "count" => 5}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "bin_start", bin: [binned: true, step: 2])
+|> Vl.encode_field(:x2, "bin_end")
+|> Vl.encode_field(:y, "count", type: :quantitative)
+```
+
+## Log-scaled Histogram
+
+Log-scaled Histogram. We may improve the support of this. See https://github.com/vega/vega-lite/issues/4792.
+
+```elixir
+data = [
+  %{"x" => 0.01},
+  %{"x" => 0.1},
+  %{"x" => 1},
+  %{"x" => 1},
+  %{"x" => 1},
+  %{"x" => 1},
+  %{"x" => 10},
+  %{"x" => 10},
+  %{"x" => 100},
+  %{"x" => 500},
+  %{"x" => 800}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.transform(calculate: "log(datum.x)/log(10)", as: "log_x")
+|> Vl.transform(bin: true, field: "log_x", as: "bin_log_x")
+|> Vl.transform(calculate: "pow(10, datum.bin_log_x)", as: "x1")
+|> Vl.transform(calculate: "pow(10, datum.bin_log_x_end)", as: "x2")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "x1", scale: [type: :log, base: 10], axis: [tick_count: 5])
+|> Vl.encode_field(:x2, "x2")
+|> Vl.encode(:y, aggregate: :count)
+```
+
+## Non-linear Histogram
+
+A histogram for a data source that provides non-linear bins. Thanks to @Saba9 who helps create this example.
+
+```elixir
+data = [
+  %{
+    "startTime" => "0",
+    "endTime" => "8.33",
+    "residency" => 0
+  },
+  %{
+    "startTime" => "8.33",
+    "endTime" => "12.50",
+    "residency" => 0
+  },
+  %{
+    "startTime" => "12.50",
+    "endTime" => "16.67",
+    "residency" => 31.17
+  },
+  %{
+    "startTime" => "16.67",
+    "endTime" => "33.33",
+    "residency" => 38.96
+  },
+  %{
+    "startTime" => "33.33",
+    "endTime" => "50.00",
+    "residency" => 6.49
+  },
+  %{
+    "startTime" => "50.00",
+    "endTime" => "66.67",
+    "residency" => 2.9
+  },
+  %{
+    "startTime" => "66.67",
+    "endTime" => "83.33",
+    "residency" => 2.6
+  },
+  %{
+    "startTime" => "83.33",
+    "endTime" => "∞",
+    "residency" => 16.88
+  }
+]
+
+Vl.new(width: [step: 40], height: 100, title: "Distribution of Frame Render Time (ms)")
+|> Vl.data_from_values(data)
+|> Vl.mark(:bar, corner_radius_end: 0, orient: :vertical)
+|> Vl.encode_field(:x, "startTime",
+  type: :ordinal,
+  scale: [type: :point, padding: 0],
+  axis: [label_angle: 0]
+)
+|> Vl.encode_field(:x2, "endTime")
+|> Vl.encode_field(:y, "residency",
+  type: :quantitative,
+  scale: [domain: [0, 100]],
+  axis: [label_expr: "datum.label + '%'"]
+)
+```
+
+## Relative Frequency
+
+Relative frequency histogram. The data is binned with first transform. The number of values per bin and the total number are calculated in the second and third transform to calculate the relative frequency in the last transformation step.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
+|> Vl.transform(bin: true, field: "Horsepower", as: "bin_Horsepower")
+|> Vl.transform(
+  aggregate: [op: :count, as: "count"],
+  groupby: ["bin_Horsepower", "bin_Horsepower_end"]
+)
+|> Vl.transform(joinaggregate: [op: :sum, field: "Count", as: "TotalCount"])
+|> Vl.transform(calculate: "datum.Count/datum.TotalCount", as: "PercentOfTotal")
+|> Vl.mark(:bar, tooltip: true)
+|> Vl.encode_field(:x, "bin_Horsepower", bin: [binned: true], title: "Horsepower")
+|> Vl.encode_field(:x2, "bin_Horsepower_end")
+|> Vl.encode_field(:y, "PercentOfTotal", type: :quantitative)
+```
+
+## Section
+
+```elixir
+Vl.from_json("""
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Relative frequency histogram. The data is binned with first transform. The number of values per bin and the total number are calculated in the second and third transform to calculate the relative frequency in the last transformation step.",
+  "data": {"url": "https://vega.github.io/vega-lite/examples/data/cars.json"},
+  "transform": [{
+      "bin": true, "field": "Horsepower", "as": "bin_Horsepwoer"
+    }, {
+      "aggregate": [{"op": "count", "as": "Count"}],
+      "groupby": ["bin_Horsepwoer", "bin_Horsepwoer_end"]
+    }, {
+      "joinaggregate": [{"op": "sum", "field": "Count", "as": "TotalCount"}]
+    }, {
+      "calculate": "datum.Count/datum.TotalCount", "as": "PercentOfTotal"
+    }
+  ],
+  "mark": {"type": "bar", "tooltip": true},
+  "encoding": {
+    "x": {
+      "title": "Horsepower",
+      "field": "bin_Horsepwoer",
+      "bin": {"binned": true}
+    },
+    "x2": {"field": "bin_Horsepwoer_end"},
+    "y": {
+      "title": "Relative Frequency",
+      "field": "PercentOfTotal",
+      "type": "quantitative",
+      "axis": {
+        "format": ".1~%"
+        }
+    }
+  }
+}
+""")
+```
