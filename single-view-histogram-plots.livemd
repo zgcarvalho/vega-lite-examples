@@ -141,14 +141,12 @@ Vl.new(width: [step: 40], height: 100, title: "Distribution of Frame Render Time
 
 Relative frequency histogram. The data is binned with first transform. The number of values per bin and the total number are calculated in the second and third transform to calculate the relative frequency in the last transformation step.
 
-TODO fix
-
 ```elixir
 Vl.new()
 |> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
 |> Vl.transform(bin: true, field: "Horsepower", as: "bin_Horsepower")
 |> Vl.transform(
-  aggregate: [[op: "count", as: "count"]],
+  aggregate: [[op: "count", as: "Count"]],
   groupby: ["bin_Horsepower", "bin_Horsepower_end"]
 )
 |> Vl.transform(joinaggregate: [[op: "sum", field: "Count", as: "TotalCount"]])
@@ -216,14 +214,14 @@ Vl.new(width: 300, height: 200)
 
 ## Cumulative Frequency Distribution
 
-TODO sort
-
 ```elixir
 Vl.new()
 |> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
-|> Vl.transform(sort: "IMDB Rating")
-|> Vl.transform(window: [[op: "count", field: "count", as: "Cumulative Count"]])
-# |> Vl.transform(frame: [1, 0])
+|> Vl.transform(
+  sort: [[field: "IMDB Rating"]],
+  window: [[op: "count", field: "count", as: "Cumulative Count"]],
+  frame: [:null, 0]
+)
 |> Vl.mark(:area)
 |> Vl.encode_field(:x, "IMDB Rating", type: :quantitative)
 |> Vl.encode_field(:y, "Cumulative Count", type: :quantitative)
@@ -231,29 +229,95 @@ Vl.new()
 # |> Vl.to_spec()
 ```
 
-## Section
+## Layered Histogram and Cumulative Histogram
 
 ```elixir
-Vl.from_json("""
-{
-  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "data": {"url": "https://vega.github.io/vega-lite/examples/data/movies.json"},
-  "transform": [{
-    "sort": [{"field": "IMDB Rating"}],
-    "window": [{"op": "count", "field": "count", "as": "Cumulative Count"}]
-  }],
-  "mark": "area",
-  "encoding": {
-    "x": {
-      "field": "IMDB Rating",
-      "type": "quantitative"
-    },
-    "y": {
-      "field": "Cumulative Count",
-      "type": "quantitative"
-    }
-  }
-}
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
+|> Vl.transform(bin: true, field: "IMDB Rating", as: "bin_IMDB_Rating")
+|> Vl.transform(
+  aggregate: [[op: "count", as: "count"]],
+  groupby: ["bin_IMDB_Rating", "bin_IMDB_Rating_end"]
+)
+|> Vl.transform(filter: "datum.bin_IMDB_Rating !== null")
+|> Vl.transform(
+  sort: [[field: "bin_IMDB_Rating"]],
+  window: [[op: "sum", field: "count", as: "Cumulative Count"]],
+  frame: [:null, 0]
+)
+|> Vl.encode_field(:x, "bin_IMDB_Rating",
+  type: :quantitative,
+  bin: :binned,
+  scale: ["zero", false]
+)
+|> Vl.encode_field(:x2, "bin_IMDB_Rating_end")
+|> Vl.layers([
+  Vl.new()
+  |> Vl.mark(:bar)
+  |> Vl.encode_field(:y, "Cumulative Count", type: :quantitative),
+  Vl.new()
+  |> Vl.mark(:bar, opacity: 0.5, color: :yellow)
+  |> Vl.encode_field(:y, "count", type: :quantitative)
+])
+```
 
-""")
+## Wilkinson Dot Plot
+
+A Wilkinson Dot Plot
+
+```elixir
+data = [
+  values: [
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    2,
+    2,
+    2,
+    3,
+    3,
+    4,
+    4,
+    4,
+    4,
+    4,
+    4
+  ]
+]
+
+Vl.new()
+|> Vl.data(data)
+|> Vl.transform(window: [[op: "rank", as: "id"]], groupby: ["data"])
+|> Vl.mark(:circle, opacity: 1)
+|> Vl.encode_field(:x, "data", type: :ordinal)
+|> Vl.encode_field(:y, "id", type: :ordinal, sort: :descending)
+```
+
+## Relative Bar Chart (Calculate Percentage of Total)
+
+A bar graph showing what activites consume what percentage of the day.
+
+```elixir
+data = [
+  %{"Activity" => "Sleeping", "Time" => 8},
+  %{"Activity" => "Eating", "Time" => 2},
+  %{"Activity" => "TV", "Time" => 4},
+  %{"Activity" => "Work", "Time" => 8},
+  %{"Activity" => "Exercise", "Time" => 2}
+]
+
+Vl.new(height: [step: 12])
+|> Vl.data_from_values(data)
+|> Vl.transform(joinaggregate: [[op: "sum", field: "Time", as: "TotalTime"]])
+|> Vl.transform(calculate: "datum.Time/datum.TotalTime * 100", as: "PercentOfTotal")
+|> Vl.mark(:bar)
+|> Vl.encode_field(:x, "PercentOfTotal", type: :quantitative, title: "% of total Time")
+|> Vl.encode_field(:y, "Activity", type: :nominal)
 ```
