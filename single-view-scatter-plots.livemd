@@ -22,13 +22,100 @@ Vl.new()
 |> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative)
 ```
 
+## 1D Strip Plot
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/seattle-weather.csv")
+|> Vl.mark(:tick)
+|> Vl.encode_field(:x, "precipitation", type: :quantitative)
+```
+
+## Strip Plot
+
+Shows the relationship between horsepower and the number of cylinders using tick marks.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
+|> Vl.mark(:tick)
+|> Vl.encode_field(:x, "Horsepower", type: :quantitative)
+|> Vl.encode_field(:y, "Cylinders", type: :ordinal)
+```
+
+## Colored Scatterplot
+
+A scatterplot showing body mass and flipper lengths of penguins.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/penguins.json")
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "Flipper Length (mm)", type: :quantitative, scale: [zero: false])
+|> Vl.encode_field(:y, "Body Mass (g)", type: :quantitative, scale: [zero: false])
+|> Vl.encode_field(:color, "Species", type: :nominal)
+|> Vl.encode_field(:shape, "Species", type: :nominal)
+```
+
+## 2D Histogram Scatterplot
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
+|> Vl.mark(:circle)
+|> Vl.encode_field(:x, "IMDB Rating", bin: [maxbins: 10])
+|> Vl.encode_field(:y, "Rotten Tomatoes Rating", bin: [maxbins: 10])
+|> Vl.encode(:size, aggregate: :count)
+```
+
+## Bubble Plot
+
+A bubbleplot showing horsepower on x, miles per gallons on y, and binned acceleration on size.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "Horsepower", type: :quantitative)
+|> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative)
+|> Vl.encode_field(:size, "Acceleration", type: :quantitative)
+```
+
+## Scatterplot with Null Values in Grey
+
+TODO condition
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "IMDB Rating", type: :quantitative)
+|> Vl.encode_field(:y, "Rotten Tomatoes Rating", type: :quantitative)
+|> Vl.encode(:color,
+  value: "#aaa",
+  condition: [test: "datum['IMDB Rating'] !== null && datum['Rotten Tomatoes Rating'] !== null"]
+)
+|> Vl.config(mark: [invalid: :null])
+```
+
+## Scatterplot with Filled Circles
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
+|> Vl.mark(:circle)
+|> Vl.encode_field(:x, "Horsepower", type: :quantitative)
+|> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative)
+```
+
+## Section
+
 ```elixir
 Vl.from_json("""
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "description": "A scatterplot showing horsepower and miles per gallons for various cars.",
   "data": {"url": "https://vega.github.io/vega-lite/examples/data/cars.json"},
-  "mark": "point",
+  "mark": "circle",
   "encoding": {
     "x": {"field": "Horsepower", "type": "quantitative"},
     "y": {"field": "Miles_per_Gallon", "type": "quantitative"}
