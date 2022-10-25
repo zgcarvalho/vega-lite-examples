@@ -108,18 +108,79 @@ Vl.new()
 |> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative)
 ```
 
-## Section
+## Bubble Plot (Gapminder)
+
+A bubble plot showing the correlation between health and income for 187 countries in the world (modified from an example in Lisa Charlotte Rost’s blog post ‘One Chart, Twelve Charting Libraries’ –http://lisacharlotterost.github.io/2016/05/17/one-chart-code/).
 
 ```elixir
-Vl.from_json("""
-{
-  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "data": {"url": "https://vega.github.io/vega-lite/examples/data/cars.json"},
-  "mark": "circle",
-  "encoding": {
-    "x": {"field": "Horsepower", "type": "quantitative"},
-    "y": {"field": "Miles_per_Gallon", "type": "quantitative"}
-  }
-}
-""")
+Vl.new(width: 500, height: 300)
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/gapminder-health-income.csv")
+|> Vl.mark(:circle)
+|> Vl.encode_field(:y, "health", type: :quantitative, scale: [zero: false], axis: [min_extent: 30])
+|> Vl.encode_field(:x, "income", scale: [type: :log])
+|> Vl.encode_field(:size, "population", type: :quantitative)
+|> Vl.encode(:color, value: "#000")
+```
+
+## Bubble Plot (Natural Disasters)
+
+Visualization of global deaths from natural disasters. Copy of chart from Our World in Data.
+
+```elixir
+Vl.new(width: 600, height: 400)
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/disasters.csv")
+|> Vl.transform(filter: "datum.Entity !== 'All natural disasters'")
+|> Vl.mark(:circle, opacity: 0.8, stroke: "black", stroke_width: 1)
+|> Vl.encode_field(:x, "Year", type: :temporal, axis: [grid: false])
+|> Vl.encode_field(:y, "Entity", type: :nominal, axis: [title: false])
+|> Vl.encode_field(:size, "Deaths", type: :quantitative, scale: [range_max: 5000])
+|> Vl.encode_field(:color, "Entity", legend: false)
+```
+
+## Section Scatter Plot with Text Marks
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
+|> Vl.transform(calculate: "datum.Origin[0]", as: "OriginInitial")
+|> Vl.mark(:text)
+|> Vl.encode_field(:x, "Horsepower", type: :quantitative)
+|> Vl.encode_field(:y, "Miles_per_Gallon", type: :quantitative)
+|> Vl.encode_field(:color, "Origin", type: :nominal)
+|> Vl.encode_field(:text, "OriginInitial", type: :nominal)
+```
+
+## Strip plot with custom axis tick labels
+
+After using the numerical values to calculate the average rating, they are replaced by string labels.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/movies.json")
+|> Vl.mark(:circle, size: 80)
+|> Vl.encode_field(:x, "IMDB Rating",
+  aggregate: :mean,
+  scale: [domain: [0, 10]],
+  title: false,
+  axis: [
+    label_expr: "datum.label == 0 ? 'Poor' : datum.label == 5 ? 'Neutral' : 'Great'",
+    label_flush: false,
+    values: [0, 5, 10]
+  ]
+)
+|> Vl.encode_field(:y, "Major Genre", sort: "x", title: false)
+```
+
+## Dot Plot with Jittering
+
+Shows the relationship between horsepower and the number of cylinders using point marks with random offset (jittering).
+
+```elixir
+Vl.new(height: [step: 50])
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/cars.json")
+|> Vl.transform(calculate: "random()", as: "random")
+|> Vl.mark(:point)
+|> Vl.encode_field(:x, "Horsepower", type: :quantitative)
+|> Vl.encode_field(:y, "Cylinders", type: :ordinal)
+|> Vl.encode_field(:y_offset, "random", type: :quantitative)
 ```
