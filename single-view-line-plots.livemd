@@ -1,0 +1,75 @@
+# Line Charts
+
+```elixir
+Mix.install([
+  :kino_vega_lite,
+  :vega_lite,
+  :jason
+])
+
+alias VegaLite, as: Vl
+```
+
+## Line Chart
+
+Google’s stock price over time.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.transform(filter: "datum.symbol==='GOOG'")
+|> Vl.mark(:line)
+|> Vl.encode_field(:x, "date", type: :temporal)
+|> Vl.encode_field(:y, "price", type: :quantitative)
+```
+
+## Line Chart with Point Markers
+
+By setting the point property of the line mark definition to an object defining a property of the overlaying point marks, we can overlay point markers on top of line.
+
+Notes: (1) This is equivalent to adding another layer of point marks. (2) While "point" marks are normally semi-transparent, the overlay point marker has opacity = 1 by default.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.mark(:line, point: true)
+|> Vl.encode_field(:x, "date", time_unit: "year")
+|> Vl.encode_field(:y, "price", type: :quantitative, aggregate: :mean)
+|> Vl.encode_field(:color, "symbol", type: :nominal)
+```
+
+## Line Chart with Stroked Point Markers
+
+By setting the point property of the line mark definition to an object defining a property of the overlaying point marks, we can overlay point markers on top of line. Here we create stroked points by setting their "filled" to false and their fill to "white".
+
+Notes: (1) This is equivalent to adding another layer of point marks. (2) While "point" marks are normally semi-transparent, the overlay point marker has opacity = 1 by default.
+
+```elixir
+
+```
+
+## Section
+
+```elixir
+Vl.from_json("""
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Stock prices of 5 Tech Companies over Time.",
+  "data": {"url": "https://vega.github.io/vega-lite/examples/data/stocks.csv"},
+  "mark": {
+    "type": "line",
+    "point": {
+      "filled": false,
+      "fill": "white"
+    }
+  },
+  "encoding": {
+    "x": {"timeUnit": "year", "field": "date"},
+    "y": {"aggregate":"mean", "field": "price", "type": "quantitative"},
+    "color": {"field": "symbol", "type": "nominal"}
+  }
+}
+""")
+```
+
+
