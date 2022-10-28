@@ -45,7 +45,62 @@ By setting the point property of the line mark definition to an object defining 
 Notes: (1) This is equivalent to adding another layer of point marks. (2) While "point" marks are normally semi-transparent, the overlay point marker has opacity = 1 by default.
 
 ```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.mark(:line, point: [filled: false, fill: "white"])
+|> Vl.encode_field(:x, "date", time_unit: "year")
+|> Vl.encode_field(:y, "price", type: :quantitative, aggregate: :mean)
+|> Vl.encode_field(:color, "symbol", type: :nominal)
+```
 
+## Multi Series Line Chart
+
+Stock prices of 5 Tech Companies over Time.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.mark(:line)
+|> Vl.encode_field(:x, "date", type: :temporal)
+|> Vl.encode_field(:y, "price", type: :quantitative)
+|> Vl.encode_field(:color, "symbol", type: :nominal)
+```
+
+## Slope Graph
+
+Slope graph showing the change in yield for different barley sites. It shows the error in the year labels for the Morris site.
+
+```elixir
+Vl.new(width: [step: 50])
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/barley.csv")
+|> Vl.mark(:line)
+|> Vl.encode_field(:x, "year", type: :ordinal, scale: [padding: 0.5])
+|> Vl.encode_field(:y, "yield", type: :quantitative, aggregate: :median)
+|> Vl.encode_field(:color, "site", type: :nominal)
+```
+
+## Step Chart
+
+Google’s stock price over time.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.transform(filter: "datum.symbol==='GOOG'")
+|> Vl.mark(:line, interpolate: "step-after")
+|> Vl.encode_field(:x, "date", type: :temporal)
+|> Vl.encode_field(:y, "price", type: :quantitative)
+```
+
+## Line Chart with Monotone Interpolation
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.transform(filter: "datum.symbol==='GOOG'")
+|> Vl.mark(:line, interpolate: "monotone")
+|> Vl.encode_field(:x, "date", type: :temporal)
+|> Vl.encode_field(:y, "price", type: :quantitative)
 ```
 
 ## Section
@@ -54,22 +109,18 @@ Notes: (1) This is equivalent to adding another layer of point marks. (2) While 
 Vl.from_json("""
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "description": "Stock prices of 5 Tech Companies over Time.",
-  "data": {"url": "https://vega.github.io/vega-lite/examples/data/stocks.csv"},
+  "description": "Google's stock price over time.",
+  "data": {"url": "data/stocks.csv"},
+  "transform": [{"filter": "datum.symbol==='GOOG'"}],
   "mark": {
     "type": "line",
-    "point": {
-      "filled": false,
-      "fill": "white"
-    }
+    "interpolate": "step-after"
   },
   "encoding": {
-    "x": {"timeUnit": "year", "field": "date"},
-    "y": {"aggregate":"mean", "field": "price", "type": "quantitative"},
-    "color": {"field": "symbol", "type": "nominal"}
+    "x": {"field": "date", "type": "temporal"},
+    "y": {"field": "price", "type": "quantitative"}
   }
 }
+
 """)
 ```
-
-
