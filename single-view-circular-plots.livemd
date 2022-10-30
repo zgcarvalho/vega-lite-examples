@@ -45,26 +45,130 @@ Vl.new()
 |> Vl.encode_field(:color, "category", type: :nominal)
 ```
 
+## Donut Chart
 
+A donut chart encodes proportional differences among a set of numeric values using angular extents.
+
+```elixir
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.mark(:arc, inner_radius: 50)
+|> Vl.encode_field(:theta, "value", type: :quantitative)
+|> Vl.encode_field(:color, "category", type: :nominal)
+```
+
+## Pie Chart with Labels
+
+Layering text over arc marks to label pie charts. For now, you need to add stack: true to theta to force the text to apply the same polar stacking layout.
+
+```elixir
+data = [
+  %{"category" => "a", "value" => 4},
+  %{"category" => "b", "value" => 6},
+  %{"category" => "c", "value" => 10},
+  %{"category" => "d", "value" => 3},
+  %{"category" => "e", "value" => 7},
+  %{"category" => "f", "value" => 8}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.encode_field(:theta, "value", type: :quantitative, stack: true)
+|> Vl.encode_field(:color, "category", type: :nominal, legend: false)
+|> Vl.layers([
+  Vl.new()
+  |> Vl.mark(:arc, outer_radius: 80),
+  Vl.new()
+  |> Vl.mark(:text, radius: 90)
+  |> Vl.encode_field(:text, "category", type: :nominal)
+])
+```
+
+## Radial Plot
+
+This radial plot uses both angular and radial extent to convey multiple dimensions of data. However, this approach is not perceptually effective, as viewers will most likely be drawn to the total area of the shape, conflating the two dimensions. This example also demonstrates a way to add labels to circular plots.
+
+```elixir
+data = [values: [12, 23, 47, 6, 52, 19]]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.encode_field(:theta, "values", type: :quantitative, stack: true)
+|> Vl.encode_field(:color, "values", type: :nominal, legend: false)
+|> Vl.encode_field(:radius, "values", scale: [type: "sqrt", zero: true, range_min: 20])
+|> Vl.layers([
+  Vl.new()
+  |> Vl.mark(:arc, inner_radius: 20, stroke: "#fff"),
+  Vl.new()
+  |> Vl.mark(:text, radius_offset: 10)
+  |> Vl.encode_field(:text, "values")
+])
+```
+
+## Pyramid Pie Chart
+
+Reproducing http://robslink.com/SAS/democd91/pyramid_pie.htm
+
+```elixir
+data = [
+  %{"category" => "Sky", "value" => 75, "order" => 3},
+  %{"category" => "Shady side of a pyramid", "value" => 10, "order" => 1},
+  %{"category" => "Sunny side of a pyramid", "value" => 15, "order" => 2}
+]
+
+Vl.new()
+|> Vl.data_from_values(data)
+|> Vl.mark(:arc, outer_radius: 80)
+|> Vl.encode_field(:theta, "value",
+  type: :quantitative,
+  scale: [range: [2.356, 9.639]],
+  stack: true
+)
+|> Vl.encode_field(:color, "category",
+  type: :nominal,
+  scale: [
+    domain: ["Sky", "Shady side of a pyramid", "Sunny side of a pyramid"],
+    range: ["#416D9D", "#674028", "#DEAC58"]
+  ],
+  legend: false
+)
+```
 
 ```elixir
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-  "description": "A simple pie chart with embedded data.",
+  "description": "Reproducing http://robslink.com/SAS/democd91/pyramid_pie.htm",
   "data": {
     "values": [
-      {"category": 1, "value": 4},
-      {"category": 2, "value": 6},
-      {"category": 3, "value": 10},
-      {"category": 4, "value": 3},
-      {"category": 5, "value": 7},
-      {"category": 6, "value": 8}
+      {"category": "Sky", "value": 75, "order": 3},
+      {"category": "Shady side of a pyramid", "value": 10, "order": 1},
+      {"category": "Sunny side of a pyramid", "value": 15, "order": 2}
     ]
   },
-  "mark": "arc",
+  "mark": {"type": "arc", "outerRadius": 80},
   "encoding": {
-    "theta": {"field": "value", "type": "quantitative"},
-    "color": {"field": "category", "type": "nominal"}
+    "theta": {
+      "field": "value", "type": "quantitative",
+      "scale": {"range": [2.35619449, 8.639379797]},
+      "stack": true
+    },
+    "color": {
+      "field": "category", "type": "nominal",
+      "scale": {
+        "domain": ["Sky", "Shady side of a pyramid", "Sunny side of a pyramid"],
+        "range": ["#416D9D", "#674028", "#DEAC58"]
+      },
+      "legend": {
+        "orient": "none",
+        "title": null,
+        "columns": 1,
+        "legendX": 200,
+        "legendY": 80
+      }
+    },
+    "order": {
+      "field": "order"
+    }
   }
 }
 ```
