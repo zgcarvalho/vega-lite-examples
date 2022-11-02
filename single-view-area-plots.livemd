@@ -1,0 +1,80 @@
+# Area Charts & Streamgraphs
+
+```elixir
+Mix.install([
+  :kino_vega_lite,
+  :vega_lite,
+  :jason
+])
+
+alias VegaLite, as: Vl
+```
+
+## Area Chart
+
+```elixir
+Vl.new(width: 300, height: 200)
+|> Vl.data_from_url(
+  "https://vega.github.io/vega-lite/examples/data/unemployment-across-industries.json"
+)
+|> Vl.mark(:area)
+|> Vl.encode_field(:x, "date", time_unit: "yearmonth", axis: [format: "%Y"])
+|> Vl.encode_field(:y, "count", aggregate: :sum, title: "count")
+```
+
+## Area Chart with Gradient
+
+Google’s stock price over time.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.transform(filter: "datum.symbol==='GOOG'")
+|> Vl.mark(:area,
+  line: [color: "darkgreen"],
+  color: [
+    x1: 1,
+    y1: 1,
+    x2: 1,
+    y2: 0,
+    gradient: "linear",
+    stops: [
+      [offset: 0, color: "white"],
+      [offset: 1, color: "darkgreen"]
+    ]
+  ]
+)
+|> Vl.encode_field(:x, "date", type: :temporal)
+|> Vl.encode_field(:y, "price", type: :quantitative)
+```
+
+## Area Chart with Overlaying Lines and Point Markers
+
+Google’s stock price over time.
+
+```elixir
+Vl.new()
+|> Vl.data_from_url("https://vega.github.io/vega-lite/examples/data/stocks.csv")
+|> Vl.transform(filter: "datum.symbol==='GOOG'")
+|> Vl.mark(:area, line: true, point: true)
+|> Vl.encode_field(:x, "date", type: :temporal)
+|> Vl.encode_field(:y, "price", type: :quantitative)
+```
+
+```elixir
+Vl.from_json("""
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "description": "Google's stock price over time.",
+  "data": {"url": "data/stocks.csv"},
+  "transform": [{"filter": "datum.symbol==='GOOG'"}],
+  "mark": {"type": "area", "line": true, "point": true},
+  "encoding": {
+    "x": {"field": "date", "type": "temporal"},
+    "y": {"field": "price", "type": "quantitative"}
+  }
+}
+
+
+""")
+```
